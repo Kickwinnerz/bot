@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hacker Bot - Devi</title>
+  <style>
+    body { margin: 0; padding: 0; background: #000; font-family: "Courier New", monospace; color: #0f0; }
+    canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+    .chat-container { width: 420px; height: 550px; background: rgba(0,0,0,0.8); border-radius: 12px; box-shadow: 0 0 25px #0f0; display: flex; flex-direction: column; margin: 40px auto; }
+    .chat-header { background: #0f0; color: #000; text-align: center; padding: 15px; font-weight: bold; font-size: 20px; }
+    .chat-body { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; background: rgba(0,0,0,0.9); }
+    .message { margin: 8px 0; padding: 10px; border-radius: 10px; max-width: 75%; font-size: 15px; word-wrap: break-word; }
+    .user-message { background: #0f0; color: #000; align-self: flex-end; }
+    .bot-message { background: #111; color: #0f0; align-self: flex-start; }
+    .typing { font-style: italic; color: #0f0; font-size: 13px; margin: 5px; }
+    .chat-footer { display: flex; padding: 10px; border-top: 1px solid #0f0; background: #111; }
+    .chat-footer input { flex: 1; padding: 10px; border: 1px solid #0f0; border-radius: 20px; outline: none; background: #000; color: #0f0; }
+    .chat-footer button { background: #0f0; color: #000; border: none; margin-left: 10px; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    .chat-footer button:hover { background: #00ff99; }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+
+  <div class="chat-container">
+    <div class="chat-header">💻 Hacker Bot (Owner: Devi)</div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-footer">
+      <input type="text" id="userInput" placeholder="Type your command...">
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBody = document.getElementById("chatBody");
+    const input = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keypress", function(e) { if (e.key === "Enter") sendMessage(); });
+
+    function sendMessage() {
+      const message = input.value.trim();
+      if (message === "") return;
+      appendMessage(message, "user-message");
+      input.value = "";
+
+      const typingDiv = document.createElement("div");
+      typingDiv.classList.add("typing");
+      typingDiv.innerText = "Bot is typing...";
+      chatBody.appendChild(typingDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      })
+      .then(res => res.json())
+      .then(data => {
+        typingDiv.remove();
+        appendMessage(data.reply, "bot-message");
+      });
+    }
+
+    function appendMessage(text, className) {
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("message", className);
+      msgDiv.innerText = text;
+      chatBody.appendChild(msgDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    // MATRIX EFFECT
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+    canvas.height = window.innerHeight; canvas.width = window.innerWidth;
+    const letters = "01"; const fontSize = 14; const columns = canvas.width / fontSize; const drops = [];
+    for (let x = 0; x < columns; x++) drops[x] = 1;
+    function draw() {
+      ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = "#0f0"; ctx.font = fontSize+"px monospace";
+      for (let i=0;i<drops.length;i++) {
+        const text = letters[Math.floor(Math.random()*letters.length)];
+        ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+        if (drops[i]*fontSize>canvas.height&&Math.random()>0.975) drops[i]=0;
+        drops[i]++;
+      }
+    }
+    setInterval(draw, 40);
+  </script>
+</body>
+</html>
